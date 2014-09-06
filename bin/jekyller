@@ -24,6 +24,7 @@ template_file = "_template/default.md.erb"
 
 case command
 when :draft
+  Dir.mkdir("_drafts") unless Dir.exists("_drafts")
   output_file = "_drafts/#{title}.md.erb"
   post_time = "<%=post_time%>"
 when :post
