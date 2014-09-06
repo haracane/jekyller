@@ -8,15 +8,26 @@ command = ARGV.shift.to_sym
 output_type = :post
 create_force = false
 post_date = Date.today
+title = nil
+tags = []
+keywords = nil
+description = nil
 
 op = OptionParser.new
 
 op.on("-f") { create_force = true }
 op.on("-d NUM", Integer) { |i| post_date += i }
+op.on("--title TITLE", String) { |s| title = s }
+op.on("--tags TAGS", String) { |s| tags = s.split(/,/) }
+op.on("--keywords KEYWORDS", String) { |s| keywords = s.split(/,/) }
+op.on("--description DESCRIPTION", String) { |s| description = s }
 
 op.parse!(ARGV)
 
-title = ARGV[0]
+name = ARGV[0]
+
+title ||= name
+keywords ||= tags
 
 post_time = "#{post_date.strftime("%Y-%m-%d")} #{Time.now.strftime("%H:%M:%S")}J"
 
@@ -25,13 +36,13 @@ template_file = "_template/default.md.erb"
 case command
 when :draft
   Dir.mkdir("_drafts") unless Dir.exists?("_drafts")
-  output_file = "_drafts/#{title}.md.erb"
+  output_file = "_drafts/#{name}.md.erb"
   post_time = "<%=post_time%>"
 when :post
-  output_file = "_posts/#{post_date.strftime("%Y-%m-%d")}-#{title}.md"
+  output_file = "_posts/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
 when :publish
-  template_file = "_drafts/#{title}.md.erb"
-  output_file = "_posts/#{post_date.strftime("%Y-%m-%d")}-#{title}.md"
+  template_file = "_drafts/#{name}.md.erb"
+  output_file = "_posts/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
 end
 
 unless File.exists?(template_file)
