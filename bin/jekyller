@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+require "date"
+require "erb"
+require "optparse"
+
+command = ARGV.shift.to_sym
+
+output_type = :post
+create_force = false
+post_date = Date.today
+
+op = OptionParser.new
+
+op.on("-f") { create_force = true }
+op.on("-d NUM", Integer) { |i| post_date += i }
+
+op.parse!(ARGV)
+
+title = ARGV[0]
+
+post_time = "#{post_date.strftime("%Y-%m-%d")} #{Time.now.strftime("%H:%M:%S")}J"
+
+template_file = "_template/default.md.erb"
+
+case command
+when :draft
+  output_file = "_drafts/#{title}.md.erb"
+  post_time = "<%=post_time%>"
+when :post
+  output_file = "_posts/#{post_date.strftime("%Y-%m-%d")}-#{title}.md"
+when :publish
+  template_file = "_drafts/#{title}.md.erb"
+  output_file = "_posts/#{post_date.strftime("%Y-%m-%d")}-#{title}.md"
+end
+
+unless File.exists?(template_file)
+  STDERR.puts "#{template_file} already exists"
+  exit 1
+end
+
+if !create_force && File.exists?(output_file)
+  STDERR.puts "#{output_file} already exists"
+  exit 1
+end
+
+erb = ERB.new(File.read(template_file))
+
+File.write(output_file, erb.result(binding))
+
+STDERR.puts "created #{output_file}"
