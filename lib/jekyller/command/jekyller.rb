@@ -40,58 +40,83 @@ template_file = "#{template_dir}/#{template_name}.md.erb"
 
 assigned_title = title
 
-def find_post_file(name, posts_dir: "_posts")
-  Dir.new(posts_dir).entries.each do |filename|
-    if /^[0-9]+-[0-9]+-[0-9]+-#{Regexp.escape(name)}\.md/ =~ filename
-      return "#{posts_dir}/#{filename}"
+def extract_filebody(filepath)
+  filepath.split(/\//).last.split(/\.md/).first
+end
+
+def find_file_for(name, dirpath: ".", strict: false)
+  select_files_for(name, dirpath: dirpath, strict: strict).first
+end
+
+def select_files_for(name, dirpath: ".", strict: false)
+  name = extract_filebody(name)
+  Dir.new(dirpath).entries.select do |filename|
+    if strict
+      /^[0-9]+-[0-9]+-[0-9]+-#{Regexp.escape(name)}\.md/ =~ filename
+    else
+      /#{Regexp.escape(name)}/ =~ filename
     end
-  end
-  nil
+  end.map { |filename| "#{dirpath}/#{filename}" }
+end
+
+def post_file_for(name, dirpath: ".", post_date: Date.today)
+  name = extract_filebody(name)
+  "#{dirpath}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
 end
 
 names.each do |name|
   title = assigned_title || name
-  
+
   case command
   when :draft
     Dir.mkdir(drafts_dir) unless Dir.exists?(drafts_dir)
-    output_file = "#{drafts_dir}/#{name}.md.erb"
-    post_time = "<%=post_time%>"
+    draft_file = "#{drafts_dir}/#{name}.md.erb"
+    if !create_force && File.exists?(draft_file)
+      STDERR.puts "#{draft_file} already exists"
+      next
+    end
+
+    erb = ERB.new(File.read(template_file))
+    File.write(draft_file, erb.result(binding))
+    STDERR.puts "Created #{draft_file}"
+
   when :post
     output_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
-  when :publish
-    template_file = "#{drafts_dir}/#{name}.md.erb"
-    existing_file = find_post_file(name, posts_dir: posts_dir)
-    if existing_file
-      if create_force
+  when :publish, :republish
+    draft_files = select_files_for(name, dirpath: drafts_dir)
+    if draft_files.empty?
+      STDERR.puts "draft file for '#{name}' does not exist"
+      next
+    end
+
+    draft_files.each do |draft_file|
+      existing_file = find_file_for(draft_file, dirpath: posts_dir, strict: true)
+      post_file = post_file_for(draft_file, dirpath: posts_dir, post_date: post_date)
+      if command == :republish && existing_file
+        post_file = existing_file
+        create_force = true
+      end
+
+      if create_force && existing_file && post_file != existing_file
         File.unlink(existing_file)
         STDERR.puts "Deleted #{existing_file}"
-      else
-        STDERR.puts "#{existing_file} already exists"
+      end
+
+      if !create_force && File.exists?(post_file)
+        STDERR.puts "#{post_file} already exists"
         next
       end
+
+      erb = ERB.new(File.read(draft_file))
+      File.write(post_file, erb.result(binding))
+
+      if existing_file
+        STDERR.puts "Overwrited #{post_file}"
+      else
+        STDERR.puts "Created #{post_file}"
+        STDERR.puts "date: #{post_time}"
+      end
     end
-    output_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
-  when :republish
-    template_file = "#{drafts_dir}/#{name}.md.erb"    
-    existing_file = find_post_file(name, posts_dir: posts_dir)
-    output_file = existing_file || "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"    
-    create_force = true
   end
 
-  unless File.exists?(template_file)
-    STDERR.puts "#{template_file} already exists"
-    next
-  end
-  
-  if !create_force && File.exists?(output_file)
-    STDERR.puts "#{output_file} already exists"
-    next
-  end
-  
-  erb = ERB.new(File.read(template_file))
-  
-  File.write(output_file, erb.result(binding))
-  
-  STDERR.puts "created #{output_file}"
 end
