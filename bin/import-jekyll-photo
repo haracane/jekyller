@@ -1,0 +1,79 @@
+#!/usr/bin/env ruby
+require "fileutils"
+require "rmagick"
+require "optparse"
+
+op = OptionParser.new
+
+output_dir = nil
+backup_dir = nil
+
+op.on("--backup DIR", String) { |s| backup_dir = s }
+
+input_dir = ARGV.shift
+output_dir = ARGV.shift || "img/600"
+
+if input_dir.nil?
+  external_dir = "/Volumes/Untitled/DCIM/101MSDCF"
+  if Dir.exists?(external_dir)
+    input_dir = external_dir
+  else
+    input_dir = "#{ENV["HOME"]}/Dropbox/photo.new"
+  end
+end
+
+image_filepaths = Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i }
+
+if image_filepaths.empty?
+  puts "No images in #{input_dir}"
+  exit 0
+end
+
+file_mtimes = image_filepaths.map { |filepath| File::stat(filepath).mtime }
+
+latest_modified_at = file_mtimes.max
+
+#min_modified_at = Time.local(latest_modified_at.year, latest_modified_at.month, latest_modified_at.day)
+
+#image_filepaths = image_filepaths.select { |filepath| min_modified_at <= File::stat(filepath).mtime }
+
+indexes = {}
+
+image_filepaths.each do |filepath|
+  input_filename = filepath.split(/\//).last
+  modified_at = File::stat(filepath).mtime
+
+  output_filepath = nil
+  backup_filepath = nil
+
+  output_filename = nil
+  if /^DSC[0-9]+\.JPG$/ =~ input_filename
+    output_filebody = modified_at.strftime("%Y%m%d")
+    indexes[output_filebody] ||= 0
+    indexes[output_filebody] += 1
+
+    loop do
+      output_filename = "#{output_filebody}-#{indexes[output_filebody]}.jpg"
+      output_filepath = "#{output_dir}/#{output_filename}"
+      backup_filepath = "#{backup_dir}/#{output_filename}"
+      break if !File.exists?(output_filepath) && !File.exists?(backup_filepath)
+      indexes[output_filebody] += 1
+    end
+  else
+    output_filename = input_filename
+    output_filepath = "#{output_dir}/#{output_filename}"
+    backup_filepath = "#{backup_dir}/#{output_filename}"
+  end
+
+  image = Magick::Image.read(filepath).first
+  if output_dir
+    resized_image = image.resize_to_fit(600, 4096)
+    resized_image.write(output_filepath)
+    puts "Created #{output_filepath}"
+  end
+
+  if backup_dir
+    FileUtils.cp(filepath, backup_filepath)
+    puts "Created #{backup_filepath}"
+  end
+end
