@@ -70,7 +70,7 @@ names.each do |name|
   case command
   when :draft
     Dir.mkdir(drafts_dir) unless Dir.exists?(drafts_dir)
-    draft_file = "#{drafts_dir}/#{name}.md.erb"
+    draft_file = "#{drafts_dir}/#{name}.md"
     if !create_force && File.exists?(draft_file)
       STDERR.puts "#{draft_file} already exists"
       next
