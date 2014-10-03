@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+require "yaml"
+require "json"
+
+tag_categories = YAML.load(File.read("_config/tag_categories.yml"))
+
+output_tag_categories = {}
+tag_urls = {}
+
+tag_categories.each do |tag_category|
+  tag_prefix = tag_category["prefix"]
+  tags = tag_category["tags"]
+  tags.each_pair do |tag_name, tag_code|
+    tag_urls[tag_name] = "/tags/#{tag_prefix}/#{tag_code}/"
+  end
+
+  tag_category["tag_names"] = tag_category["tags"].keys
+  tag_category.delete("prefix")
+
+  tag_codes_file = "_data/tag_codes.#{tag_prefix}.yml"
+  File.write(tag_codes_file, tag_category["tags"].to_yaml)
+  puts "Created #{tag_codes_file}"
+
+  tag_names = {}
+  tags.each_pair do |tag_name, tag_code|
+    tag_names[tag_code] ||= tag_name
+  end
+
+  tag_names_file = "_data/tag_names.#{tag_prefix}.yml"
+  File.write(tag_names_file, tag_names.to_yaml)
+  puts "Created #{tag_names_file}"
+end
+
+tag_urls_file = "_data/tag_urls.json"
+File.write(tag_urls_file, tag_urls.to_json)
+puts "Created #{tag_urls_file}"
+
+tag_categories_file = "_data/tag_categories.json"
+File.write(tag_categories_file, tag_categories.to_json)
+puts "Created #{tag_categories_file}"
