@@ -6,35 +6,39 @@ tag_categories = YAML.load(File.read("_config/tag_categories.yml"))
 
 output_tag_categories = {}
 tag_urls = {}
+all_tags = {}
+all_tag_names = {}
+
+def create_file(filepath, string)
+  File.open(filepath, "w") { |f| f.puts string }
+  puts "Created #{filepath}"
+end
 
 tag_categories.each do |tag_category|
   tag_prefix = tag_category["prefix"]
   tags = tag_category["tags"]
   tags.each_pair do |tag_name, tag_code|
-    tag_urls[tag_name] = "/tags/#{tag_prefix}/#{tag_code}/"
+    tag_urls[tag_name] = ["/tags", tag_prefix, "#{tag_code}/"].compact.join("/")
   end
 
   tag_category["tag_names"] = tag_category["tags"].keys
   tag_category.delete("prefix")
-
-  tag_codes_file = "_data/tag_codes.#{tag_prefix}.yml"
-  File.write(tag_codes_file, tag_category["tags"].to_yaml)
-  puts "Created #{tag_codes_file}"
 
   tag_names = {}
   tags.each_pair do |tag_name, tag_code|
     tag_names[tag_code] ||= tag_name
   end
 
-  tag_names_file = "_data/tag_names.#{tag_prefix}.yml"
-  File.write(tag_names_file, tag_names.to_yaml)
-  puts "Created #{tag_names_file}"
+  all_tags.update(tags)
+  all_tag_names.update(tag_names)
+
+  if tag_prefix
+    create_file("_data/tag_codes.#{tag_prefix}.yml", tags.to_yaml)
+    create_file("_data/tag_names.#{tag_prefix}.yml", tag_names.to_yaml)
+  end
 end
 
-tag_urls_file = "_data/tag_urls.json"
-File.write(tag_urls_file, tag_urls.to_json)
-puts "Created #{tag_urls_file}"
-
-tag_categories_file = "_data/tag_categories.json"
-File.write(tag_categories_file, tag_categories.to_json)
-puts "Created #{tag_categories_file}"
+create_file("_data/tag_codes.json", all_tags.to_json)
+create_file("_data/tag_names.json", all_tag_names.to_json)
+create_file("_data/tag_urls.json", tag_urls.to_json)
+create_file("_data/tag_categories.json", tag_categories.to_json)

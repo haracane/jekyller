@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+require "fileutils"
+require "rmagick"
+require "optparse"
+
+op = OptionParser.new
+
+input_dir = ARGV.shift || "img/600"
+
+image_filepaths = Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i }
+
+if image_filepaths.empty?
+  puts "No images in #{input_dir}"
+  exit 0
+end
+
+image_filepaths.each do |filepath|
+  input_filename = filepath.split(/\//).last
+
+  image = Magick::Image.read(filepath).first
+
+  [240].each do |width|
+    output_dir = "img/#{width}"
+    Dir.mkdir(output_dir) unless Dir.exists?(output_dir)
+    output_filepath = "#{output_dir}/#{input_filename}"
+    resized_image = image.resize_to_fit(width, 4096)
+    resized_image.write(output_filepath)
+    puts "Created #{output_filepath}"
+  end
+end

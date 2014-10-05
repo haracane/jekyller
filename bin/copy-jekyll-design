@@ -5,6 +5,7 @@ for file in $(
     cd $src_dir;
     (
       ls _plugins/*
+      find _compass
       find . -name "*.html" | grep -v '^\./genre/' | grep -v '^\./_includes/.*/'
       find . -name "*.xml"
       find . -name "*.scss"
