@@ -23,6 +23,11 @@ image_filepaths.each do |filepath|
     output_dir = "img/#{width}"
     Dir.mkdir(output_dir) unless Dir.exists?(output_dir)
     output_filepath = "#{output_dir}/#{input_filename}"
+    if File.exists?(output_filepath)
+      puts "#{output_filepath} already exists"
+      next
+    end
+
     resized_image = image.resize_to_fit(width, 4096)
     resized_image.write(output_filepath)
     puts "Created #{output_filepath}"
