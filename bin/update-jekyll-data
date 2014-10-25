@@ -42,3 +42,12 @@ create_file("_data/tag_codes.json", all_tags.to_json)
 create_file("_data/tag_names.json", all_tag_names.to_json)
 create_file("_data/tag_urls.json", tag_urls.to_json)
 create_file("_data/tag_categories.json", tag_categories.to_json)
+
+category_navigations = [
+  {name: "トップ", url: "/" },
+  {name: "連載記事", url: "/categories.html" },
+  {name: "ジャンル", url: "/genres.html" },
+  {name: "バックナンバー", url: "/backnumber.html" }
+]
+
+create_file("_data/category_navigations.json", category_navigations.to_json)
