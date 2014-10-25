@@ -4,18 +4,15 @@ dst_dir=$2
 for file in $(
     cd $src_dir;
     (
-      ls _plugins/*
-      find _compass
       find . -name "*.html" | grep -v '^\./genre/' | grep -v '^\./_includes/.*/'
+      find _plugins _compass js _includes/post _includes/navigation
       find . -name "*.xml"
-      find . -name "*.scss"
-      find . -name "*.css"
     ) | grep -v '^\./_site/'
   ); do
   src_file=$src_dir/$file
   dst_file=$dst_dir/$file
   dst_child_dir=$(dirname $dst_file)
   if [ ! -d $dst_child_dir ]; then mkdir $dst_child_dir; fi
-  echo "cp $src_file $dst_file" >&2
+  #echo "cp $src_file $dst_file" >&2
   cp $src_file $dst_file
 done
