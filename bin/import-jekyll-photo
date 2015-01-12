@@ -8,8 +8,24 @@ op = OptionParser.new
 output_dir = nil
 backup_dir = nil
 backup_dir = "#{ENV["HOME"]}/Dropbox/photo.backup"
+width = 600
+height = 4096
+
+help_flag = false
 
 op.on("--backup DIR", String) { |s| backup_dir = s }
+op.on("--help") { help_flag = true }
+op.on("--width", Integer) { |i| width = i }
+op.on("--height", Integer) { |i| height = i }
+
+op.parse!(ARGV)
+
+if help_flag
+  puts <<-EOT
+Usage: import-jekyll-photo <--width 600> <--height 4096> <input_dir:/Volumes/Untitled/DCIM/101MSDCF or ~/Dropbox/photo.new> <output_dir:img/600>
+  EOT
+  exit 0
+end
 
 input_dir = ARGV.shift
 output_dir = ARGV.shift || "img/600"
