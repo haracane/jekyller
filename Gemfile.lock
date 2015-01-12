@@ -2,11 +2,31 @@ PATH
   remote: .
   specs:
     jekyller (0.0.1)
+      mini_exiftool
 
 GEM
   remote: https://rubygems.org/
   specs:
+    byebug (3.5.1)
+      columnize (~> 0.8)
+      debugger-linecache (~> 1.2)
+      slop (~> 3.6)
+    coderay (1.1.0)
+    columnize (0.8.9)
+    debugger-linecache (1.2.0)
     diff-lcs (1.2.5)
+    method_source (0.8.2)
+    mini_exiftool (2.5.0)
+    pry (0.10.1)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
+    pry-byebug (2.0.0)
+      byebug (~> 3.4)
+      pry (~> 0.10)
+    pry-doc (0.6.0)
+      pry (~> 0.9)
+      yard (~> 0.8)
     rake (10.3.2)
     rspec (3.1.0)
       rspec-core (~> 3.1.0)
@@ -25,6 +45,8 @@ GEM
     rspec-mocks (3.1.0)
       rspec-support (~> 3.1.0)
     rspec-support (3.1.0)
+    slop (3.6.0)
+    yard (0.8.7.6)
 
 PLATFORMS
   ruby
@@ -32,6 +54,9 @@ PLATFORMS
 DEPENDENCIES
   bundler (~> 1.6)
   jekyller!
+  pry
+  pry-byebug
+  pry-doc
   rake (~> 10.0)
   rspec
   rspec-collection_matchers
