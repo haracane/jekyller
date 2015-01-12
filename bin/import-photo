@@ -1,0 +1,101 @@
+#!/usr/bin/env ruby
+require "fileutils"
+require "rmagick"
+require "optparse"
+
+op = OptionParser.new
+
+output_dir = nil
+width = nil
+height = nil
+
+help_flag = false
+delete_flag = false
+rename_flag = false
+overwrite_flag = false
+
+op.on("--delete") { delete_flag = true }
+op.on("--help") { help_flag = true }
+op.on("--rename") { rename_flag = true }
+op.on("--overwrite") { overwrite_flag = true }
+op.on("--size SIZE", Integer) { |i| width = height = i }
+op.on("--width WIDTH", Integer) { |i| width = i }
+op.on("--height HEIGHT", Integer) { |i| height = i }
+
+op.parse!(ARGV)
+
+if help_flag
+  puts <<-EOT
+Usage: import-jekyll-photo [--size SIZE]
+                           [--width WIDTH]
+                           [--height HEIGHT]
+                           [--delete]
+                           [--rename]
+                           <input_dir:/Volumes/Untitled/DCIM/101MSDCF or ~/Dropbox/カメラアップロード>
+                           <output_dir:~/Dropbox/photo.backup>
+  EOT
+  exit 0
+end
+
+input_dir = ARGV.shift
+output_dir = ARGV.shift || "#{ENV["HOME"]}/Dropbox/photo.gplus"
+
+if input_dir.nil?
+  external_dir = "/Volumes/Untitled/DCIM/101MSDCF"
+  if Dir.exists?(external_dir)
+    input_dir = external_dir
+  else
+    input_dir = "#{ENV["HOME"]}/Dropbox/カメラアップロード"
+  end
+end
+
+image_filepaths = Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i }
+
+if image_filepaths.empty?
+  puts "No images in #{input_dir}"
+  exit 0
+end
+
+file_mtimes = image_filepaths.map { |filepath| File::stat(filepath).mtime }
+
+latest_modified_at = file_mtimes.max
+
+indexes = {}
+
+image_filepaths.each do |filepath|
+  input_filename = filepath.split(/\//).last
+  modified_at = File::stat(filepath).mtime
+
+  output_filepath = nil
+
+  if rename_flag && /^DSC[0-9]+\.JPG$/ =~ input_filename
+    output_filebody = modified_at.strftime("%Y%m%d")
+    indexes[output_filebody] ||= 0
+    indexes[output_filebody] += 1
+
+    loop do
+      output_filename = "#{output_filebody}-#{indexes[output_filebody]}.jpg"
+      output_filepath = "#{output_dir}/#{output_filename}"
+      break if overwrite_flag || !File.exists?(output_filepath)
+      indexes[output_filebody] += 1
+    end
+  else
+    output_filename = input_filename
+    output_filepath = "#{output_dir}/#{output_filename}"
+  end
+
+  if width || height
+    width ||= 8192
+    height ||= 8192
+    image = Magick::Image.read(filepath).first
+    if output_dir
+      resized_image = image.resize_to_fit(width, height)
+      resized_image.write(output_filepath)
+      puts "Created #{output_filepath}"
+    end
+  else
+    `cp #{filepath} #{output_filepath}`
+    next if $? != 0
+    puts "copied #{output_filepath}"
+  end
+end
