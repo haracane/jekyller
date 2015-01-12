@@ -24,9 +24,10 @@ module Jekyller
       dirpath = File.dirname(filepath)
       Dir.mkdir(dirpath) unless Dir.exists?(dirpath)
 
-      File.unlink(filepath) if options[:force] && File.exists?(filepath)
-
-      puts "Deleted #{filepath}" if options[:verbose]
+      if options[:force] && File.exists?(filepath)
+        File.unlink(filepath) 
+        puts "Deleted #{filepath}" if options[:verbose]
+      end
 
       if File.exists?(filepath)
         errors << "#{filepath} already exists"
