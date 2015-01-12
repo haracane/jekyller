@@ -11,6 +11,7 @@ template_dir = "_template"
 
 output_type = :post
 create_force = false
+delete_draft = false
 post_date = Date.today
 title = nil
 tags = []
@@ -21,6 +22,7 @@ template_name = "default"
 op = OptionParser.new
 
 op.on("-f") { create_force = true }
+op.on("--delete-draft") { delete_draft = true }
 op.on("-d NUM", Integer) { |i| post_date += i }
 op.on("--title TITLE", String) { |s| title = s }
 op.on("--tags TAGS", String) { |s| tags = s.split(/,/) }
@@ -72,20 +74,20 @@ names.each do |name|
     Dir.mkdir(drafts_dir) unless Dir.exists?(drafts_dir)
     draft_file = "#{drafts_dir}/#{name}.md"
     if !create_force && File.exists?(draft_file)
-      STDERR.puts "#{draft_file} already exists"
+      puts "#{draft_file} already exists"
       next
     end
 
     erb = ERB.new(File.read(template_file))
     File.write(draft_file, erb.result(binding))
-    STDERR.puts "Created #{draft_file}"
+    puts "Created #{draft_file}"
 
   when :post
     output_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
   when :publish, :republish
     draft_files = select_files_for(name, dirpath: drafts_dir)
     if draft_files.empty?
-      STDERR.puts "draft file for '#{name}' does not exist"
+      puts "draft file for '#{name}' does not exist"
       next
     end
 
@@ -99,11 +101,11 @@ names.each do |name|
 
       if create_force && existing_file && post_file != existing_file
         File.unlink(existing_file)
-        STDERR.puts "Deleted #{existing_file}"
+        puts "Deleted #{existing_file}"
       end
 
       if !create_force && File.exists?(post_file)
-        STDERR.puts "#{post_file} already exists"
+        puts "#{post_file} already exists"
         next
       end
 
@@ -111,10 +113,15 @@ names.each do |name|
       File.write(post_file, erb.result(binding))
 
       if existing_file
-        STDERR.puts "Overwrited #{post_file}"
+        puts "Overwrited #{post_file}"
       else
-        STDERR.puts "Created #{post_file}"
-        STDERR.puts "date: #{post_time}"
+        puts "Created #{post_file}"
+        puts "date: #{post_time}"
+      end
+
+      if delete_flag
+        File.unlink(draft_file)
+        puts "Deleted #{draft_file}"
       end
     end
   end
