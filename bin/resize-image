@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+$:.push File.expand_path("../../lib", __FILE__)
+require "optparse"
+require "jekyller/picture"
+
+op = OptionParser.new
+
+width = 640
+height = 480
+output_dir = '.'
+
+save_options = {}
+
+op.on('--force') { save_options[:force] = true }
+op.on('--exit') { save_options[:exif] = true }
+op.on('--stat') { save_options[:stat] = true }
+op.on('--verbose') { save_options[:verbose] = true }
+op.on('--width WIDTH', Integer) { |i| width = i }
+op.on('--height HEIGHT', Integer) { |i| height = i }
+op.on('--output PATH', String) { |s| output_dir = s}
+
+op.parse!(ARGV)
+
+image_filepaths = []
+
+ARGV.each do |path|
+  if Dir.exists?(path)
+    image_filepaths.concat(Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i })
+  elsif File.exists?(path)
+    image_filepaths << path
+  else
+    puts "#{path} does not exist"
+  end
+end
+
+if image_filepaths.empty?
+  puts "No images in #{ARGV.join(', ')}"
+  exit 0
+end
+
+image_filepaths.each do |filepath|
+  input_filename = filepath.split(/\//).last
+
+  picture = Jekyller::Picture.new(filepath)
+  picture.filepath = "#{output_dir}/#{input_filename}"
+
+  picture.resize_to_fit!(width, 4096)
+  picture.save(save_options)
+  picture.errors.each do |error|
+    puts error
+  end
+end
