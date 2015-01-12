@@ -119,7 +119,7 @@ names.each do |name|
         puts "date: #{post_time}"
       end
 
-      if delete_flag
+      if delete_draft
         File.unlink(draft_file)
         puts "Deleted #{draft_file}"
       end
