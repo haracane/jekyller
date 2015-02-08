@@ -70,7 +70,7 @@ names.each do |name|
   title = assigned_title || name
 
   case command
-  when :draft
+  when :new, :draft
     Dir.mkdir(drafts_dir) unless Dir.exists?(drafts_dir)
     draft_file = "#{drafts_dir}/#{name}.md"
     if !create_force && File.exists?(draft_file)
@@ -81,7 +81,11 @@ names.each do |name|
     erb = ERB.new(File.read(template_file))
     File.write(draft_file, erb.result(binding))
     puts "Created #{draft_file}"
-
+  when :drafts
+    draft_files = select_files_for(name, dirpath: drafts_dir)
+    draft_files.each do |file|
+      puts file
+    end
   when :post
     output_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
   when :publish, :republish
