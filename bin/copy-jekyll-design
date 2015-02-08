@@ -6,7 +6,9 @@ for file in $(
     cd $src_dir;
     (
       find . -name "*.html" | grep -v '^\./genre/' | grep -v '^\./_includes/.*/'
-      find _plugins _compass js _includes/post _includes/navigation _includes/sns-buttons _includes/mmenu
+      find _plugins _compass js \
+        _includes/post _includes/navigation _includes/sns-buttons \
+        _includes/mmenu _includes/mmenu _includes/google-adsense
       find . -name "*.xml"
     ) | grep -v '^\./_site/'
   ); do
@@ -17,7 +19,7 @@ for file in $(
   if [ ! -d $dst_child_dir ]; then mkdir $dst_child_dir; fi
   if [ -f $dst_file ] && diff $src_file $dst_file > /dev/null; then continue; fi
   case "$file" in
-    ./_includes/qiita-link.html | js/suggest.coffee )
+    ./_includes/qiita-link.html | js/suggest.coffee | js/transition.coffee )
       continue
       ;;
   esac
