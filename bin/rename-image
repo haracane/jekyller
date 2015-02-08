@@ -1,6 +1,6 @@
 #!/bin/bash
 for file in $*; do
   output_path=$(dirname $file)/$(ruby -e 'puts File.stat(ARGV[0]).mtime.strftime("%Y%m%d-%H%M%S")' $file).jpg
-  echo mv $file $output_path
-  mv $file $output_path
+  echo mv "$file" $output_path
+  mv "$file" $output_path
 done
