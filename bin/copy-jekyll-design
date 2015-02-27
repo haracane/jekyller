@@ -10,6 +10,7 @@ for file in $(
         _includes/post _includes/navigation _includes/sns-buttons \
         _includes/mmenu _includes/mmenu _includes/google-adsense
       find . -name "*.xml"
+      find . -name "default_*.yml"
     ) | grep -v '^\./_site/'
   ); do
   if [ -d $file ]; then continue; fi
