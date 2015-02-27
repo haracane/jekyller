@@ -7,11 +7,13 @@ command = ARGV.shift.to_sym
 
 posts_dir = "_posts"
 drafts_dir = "_drafts"
+erbs_dir = "_erbs"
 template_dir = "_template"
 
 output_type = :post
 create_force = false
 delete_draft = false
+update_post = false
 post_date = Date.today
 title = nil
 tags = []
@@ -23,6 +25,7 @@ op = OptionParser.new
 
 op.on("-f") { create_force = true }
 op.on("--delete-draft") { delete_draft = true }
+op.on("--update-post") { update_post = true }
 op.on("-d NUM", Integer) { |i| post_date += i }
 op.on("--title TITLE", String) { |s| title = s }
 op.on("--tags TAGS", String) { |s| tags = s.split(/,/) }
@@ -66,6 +69,51 @@ def post_file_for(name, dirpath: ".", post_date: Date.today)
   "#{dirpath}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
 end
 
+def publish(name, input_dir, output_dir, post_date: Date.today, action: :publish, delete: false, force: false, update: false)
+  draft_files = select_files_for(name, dirpath: input_dir)
+  if draft_files.empty?
+    puts "draft file for '#{name}' does not exist"
+    return
+  end
+
+  draft_files.each do |draft_file|
+    existing_file = find_file_for(draft_file, dirpath: output_dir, strict: true)
+    post_file = post_file_for(draft_file, dirpath: output_dir, post_date: post_date)
+    if update && existing_file
+      post_file = existing_file
+      force = true
+    end
+
+    if force && existing_file && post_file != existing_file
+      File.unlink(existing_file)
+      puts "Deleted #{existing_file}"
+    end
+
+    if !force && File.exists?(post_file)
+      puts "#{post_file} already exists"
+      next
+    end
+
+    if action == :compile
+      erb = ERB.new(File.read(draft_file))
+      File.write(post_file, erb.result(binding))
+    else
+      File.copy(draft_file, post_file)
+    end
+
+    if existing_file
+      puts "Overwrited #{post_file}"
+    else
+      puts "Created #{post_file}"
+    end
+
+    if delete
+      File.unlink(draft_file)
+      puts "Deleted #{draft_file}"
+    end
+  end
+end
+
 names.each do |name|
   title = assigned_title || name
 
@@ -87,47 +135,30 @@ names.each do |name|
       puts file
     end
   when :post
-    output_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
-  when :publish, :republish
-    draft_files = select_files_for(name, dirpath: drafts_dir)
-    if draft_files.empty?
-      puts "draft file for '#{name}' does not exist"
+    post_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
+
+    if !create_force && File.exists?(post_file)
+      puts "#{post_file} already exists"
       next
     end
 
-    draft_files.each do |draft_file|
-      existing_file = find_file_for(draft_file, dirpath: posts_dir, strict: true)
-      post_file = post_file_for(draft_file, dirpath: posts_dir, post_date: post_date)
-      if command == :republish && existing_file
-        post_file = existing_file
-        create_force = true
-      end
-
-      if create_force && existing_file && post_file != existing_file
-        File.unlink(existing_file)
-        puts "Deleted #{existing_file}"
-      end
-
-      if !create_force && File.exists?(post_file)
-        puts "#{post_file} already exists"
-        next
-      end
-
-      erb = ERB.new(File.read(draft_file))
-      File.write(post_file, erb.result(binding))
-
-      if existing_file
-        puts "Overwrited #{post_file}"
-      else
-        puts "Created #{post_file}"
-        puts "date: #{post_time}"
-      end
-
-      if delete_draft
-        File.unlink(draft_file)
-        puts "Deleted #{draft_file}"
-      end
+    erb = ERB.new(File.read(template_file))
+    File.write(post_file, erb.result(binding))
+    puts "Created #{post_file}"
+  when :publish, :compile
+    case command
+    when :compile
+      input_dir = erbs_dir
+    else
+      input_dir = drafts_dir
     end
-  end
 
+    publish(
+      name, input_dir, posts_dir,
+      action: command,
+      force: create_force,
+      delete: delete_draft,
+      update: update_post
+    )
+  end
 end
