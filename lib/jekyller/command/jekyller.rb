@@ -24,6 +24,7 @@ template_name = "default"
 op = OptionParser.new
 
 op.on("-f") { create_force = true }
+op.on("--post-date DATE", String) { |s| post_date = Date.parse(s) }
 op.on("--delete-draft") { delete_draft = true }
 op.on("--update-post") { update_post = true }
 op.on("-d NUM", Integer) { |i| post_date += i }
@@ -98,7 +99,7 @@ def publish(name, input_dir, output_dir, post_date: Date.today, action: :publish
       erb = ERB.new(File.read(draft_file))
       File.write(post_file, erb.result(binding))
     else
-      File.copy(draft_file, post_file)
+      FileUtils.copy(draft_file, post_file)
     end
 
     if existing_file
@@ -155,6 +156,7 @@ names.each do |name|
 
     publish(
       name, input_dir, posts_dir,
+      post_date: post_date,
       action: command,
       force: create_force,
       delete: delete_draft,
