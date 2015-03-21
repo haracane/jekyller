@@ -7,10 +7,12 @@ for file in $(
     (
       find . -name "*.html" | grep -v '^\./genre/' | grep -v '^\./_includes/.*/'
       find _plugins _compass js \
-        _includes/post _includes/navigation _includes/sns-buttons \
+        _includes/a8 _includes/ad _includes/post _includes/navigation \
+        _includes/sns-buttons \
         _includes/mmenu _includes/mmenu _includes/google-adsense
       find . -name "*.xml"
       find . -name "default_*.yml"
+      echo _data/tag_link_boxes.json
     ) | grep -v '^\./_site/'
   ); do
   if [ -d $file ]; then continue; fi
