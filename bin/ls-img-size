@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+$:.push File.expand_path("../../lib", __FILE__)
+require 'fastimage'
+require "optparse"
+
+op = OptionParser.new
+
+image_filepaths = []
+
+ARGV.each do |path|
+  if Dir.exists?(path)
+    image_filepaths.concat(Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i })
+  elsif File.exists?(path)
+    image_filepaths << path
+  else
+    puts "#{path} does not exist"
+  end
+end
+
+if image_filepaths.empty?
+  puts "No images in #{ARGV.join(', ')}"
+  exit 0
+end
+
+image_filepaths.each do |filepath|
+  size = FastImage.size(filepath)
+  puts "#{filepath}\t#{size[0]}x#{size[1]}"
+end

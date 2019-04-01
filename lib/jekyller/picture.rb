@@ -20,6 +20,10 @@ module Jekyller
       @image = image.resize_to_fit(width, height)
     end
 
+    def scale(ratio)
+      @image = image.scale(ratio)
+    end
+
     def save(options = {})
       dirpath = File.dirname(filepath)
       Dir.mkdir(dirpath) unless Dir.exists?(dirpath)
@@ -34,7 +38,8 @@ module Jekyller
         return false
       end
 
-      image.write(filepath)
+      quality = options[:quality] || 80
+      image.write(filepath) { self.quality = quality }
       puts "Created #{filepath}" if options[:verbose]
 
       if options[:exif]

@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 require "yaml"
 require "json"
+require "active_support/core_ext/object/blank"
 
 tag_categories = YAML.load(File.read("_config/tag_categories.yml"))
+tag_categories = tag_categories.select { |tag_category| tag_category['visible'] != false }
 
 output_tag_categories = {}
 tag_urls = {}
@@ -32,7 +34,7 @@ tag_categories.each do |tag_category|
   all_tags.update(tags)
   all_tag_names.update(tag_names)
 
-  if tag_prefix
+  if tag_prefix.present?
     create_file("_data/tag_codes.#{tag_prefix}.yml", tags.to_yaml)
     create_file("_data/tag_names.#{tag_prefix}.yml", tag_names.to_yaml)
   end

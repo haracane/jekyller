@@ -3,8 +3,8 @@
 ARGV.each do |file|
   ext = file.split(/\./).last
   renamed = "#{File.dirname(file)}/#{File.stat(file).mtime.strftime("%Y%m%d-%H%M%S")}.#{ext.downcase}"
-  puts "mv '#{file}' #{renamed}"
-  `mv '#{file}' #{renamed}`
+  puts "mv '#{file}' '#{renamed}'"
+  `mv '#{file}' '#{renamed}'`
 end
 
 # for file in *.JPG; do mv $file ${file%%.*}.jpg; done

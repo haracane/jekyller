@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
+$:.push File.expand_path("../../lib", __FILE__)
 require "fileutils"
 require "rmagick"
 require "optparse"
+require "active_support/core_ext/object/blank"
+require "jekyller/picture"
 
 op = OptionParser.new
 
@@ -10,11 +13,11 @@ width = nil
 height = nil
 
 help_flag = false
-delete_flag = false
+move_flag = false
 rename_flag = false
 overwrite_flag = false
 
-op.on("--delete") { delete_flag = true }
+op.on("--move") { move_flag = true }
 op.on("--help") { help_flag = true }
 op.on("--rename") { rename_flag = true }
 op.on("--overwrite") { overwrite_flag = true }
@@ -26,22 +29,22 @@ op.parse!(ARGV)
 
 if help_flag
   puts <<-EOT
-Usage: import-jekyll-photo [--size SIZE]
-                           [--width WIDTH]
-                           [--height HEIGHT]
-                           [--delete]
-                           [--rename]
-                           <input_dir:/Volumes/Untitled/DCIM/101MSDCF or ~/Dropbox/カメラアップロード>
-                           <output_dir:~/Dropbox/photo.backup>
+Usage: import-photo [--size SIZE]
+                    [--width WIDTH]
+                    [--height HEIGHT]
+                    [--delete]
+                    [--rename]
+                    <input_dir:/Volumes/Untitled/DCIM/101MSDCF or ~/Dropbox/カメラアップロード>
+                    <output_dir:~/Dropbox/photo.backup>
   EOT
   exit 0
 end
 
 input_dir = ARGV.shift
-output_dir = ARGV.shift || "#{ENV["HOME"]}/Dropbox/photo.gplus"
+output_dir = ARGV.shift || "#{ENV["HOME"]}/Dropbox/photo.import"
 
-if input_dir.nil?
-  external_dir = "/Volumes/Untitled/DCIM/101MSDCF"
+if input_dir.blank?
+  external_dir = "/Users/haracane/DCIM/101MSDCF"
   if Dir.exists?(external_dir)
     input_dir = external_dir
   else
@@ -49,7 +52,7 @@ if input_dir.nil?
   end
 end
 
-image_filepaths = Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i }
+image_filepaths = Dir::glob("#{input_dir}/*").select { |filepath| /\.jpg$/i =~ filepath }
 
 if image_filepaths.empty?
   puts "No images in #{input_dir}"
@@ -64,11 +67,18 @@ indexes = {}
 
 image_filepaths.each do |filepath|
   input_filename = filepath.split(/\//).last
-  modified_at = File::stat(filepath).mtime
+  picture = Jekyller::Picture.new(filepath)
+  stat = File::stat(filepath)
+  modified_at = [
+    picture.exif[:createdate],
+    picture.exif[:datetimeoriginal],
+    picture.exif[:modifydate],
+    stat.mtime
+  ].compact.min
 
   output_filepath = nil
 
-  if rename_flag && /^DSC[0-9]+\.JPG$/ =~ input_filename
+  if rename_flag #&& /^DSC[0-9]+\.JPG$/ =~ input_filename
     output_filebody = modified_at.strftime("%Y%m%d")
     indexes[output_filebody] ||= 0
     indexes[output_filebody] += 1
@@ -94,8 +104,14 @@ image_filepaths.each do |filepath|
       puts "Created #{output_filepath}"
     end
   else
-    `cp #{filepath} #{output_filepath}`
-    next if $? != 0
-    puts "copied #{output_filepath}"
+    if move_flag
+      `mv #{filepath} #{output_filepath}`
+      next if $? != 0
+      puts "moved #{filepath} to #{output_filepath}"
+    else
+      `cp #{filepath} #{output_filepath}`
+      next if $? != 0
+      puts "copied #{filepath} to #{output_filepath}"
+    end
   end
 end

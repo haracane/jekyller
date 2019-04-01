@@ -8,16 +8,19 @@ op = OptionParser.new
 width = 640
 height = 480
 output_dir = '.'
+format = nil
 
-save_options = {}
+save_options = { quality: 80 }
 
 op.on('--force') { save_options[:force] = true }
 op.on('--exit') { save_options[:exif] = true }
 op.on('--stat') { save_options[:stat] = true }
 op.on('--verbose') { save_options[:verbose] = true }
+op.on('--format FORMAT', String) { |s| format = s }
 op.on('--width WIDTH', Integer) { |i| width = i }
 op.on('--height HEIGHT', Integer) { |i| height = i }
-op.on('--output PATH', String) { |s| output_dir = s}
+op.on('--output PATH', String) { |s| output_dir = s }
+op.on('--quality QUALITY', Integer) { |i| save_options[:quality] = i }
 
 op.parse!(ARGV)
 
@@ -40,12 +43,16 @@ end
 
 image_filepaths.each do |filepath|
   input_filename = filepath.split(/\//).last
+  input_format = filepath.split(/\./).last
+  output_format = format || input_format
+  output_filename = [*(input_filename.split(/\./)[0..-2]), output_format].join('.')
 
   picture = Jekyller::Picture.new(filepath)
-  picture.filepath = "#{output_dir}/#{input_filename}"
+  picture.filepath = "#{output_dir}/#{output_filename}"
 
-  picture.resize_to_fit!(width, 4096)
+  picture.resize_to_fit!(width, height)
   picture.save(save_options)
+  puts "Saved #{picture.filepath}"
   picture.errors.each do |error|
     puts error
   end

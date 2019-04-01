@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
-require "date"
-require "erb"
-require "optparse"
+require 'date'
+require 'erb'
+require 'optparse'
+require 'json'
 
 command = ARGV.shift.to_sym
 
@@ -73,7 +74,7 @@ end
 def publish(name, input_dir, output_dir, post_date: Date.today, action: :publish, delete: false, force: false, update: false)
   draft_files = select_files_for(name, dirpath: input_dir)
   if draft_files.empty?
-    puts "draft file for '#{name}' does not exist"
+    warn "draft file for '#{name}' does not exist"
     return
   end
 
@@ -87,11 +88,11 @@ def publish(name, input_dir, output_dir, post_date: Date.today, action: :publish
 
     if force && existing_file && post_file != existing_file
       File.unlink(existing_file)
-      puts "Deleted #{existing_file}"
+      warn "Deleted #{existing_file}"
     end
 
     if !force && File.exists?(post_file)
-      puts "#{post_file} already exists"
+      warn "#{post_file} already exists"
       next
     end
 
@@ -103,14 +104,14 @@ def publish(name, input_dir, output_dir, post_date: Date.today, action: :publish
     end
 
     if existing_file
-      puts "Overwrited #{post_file}"
+      warn "Overwrited #{post_file}"
     else
-      puts "Created #{post_file}"
+      warn "Created #{post_file}"
     end
 
     if delete
       File.unlink(draft_file)
-      puts "Deleted #{draft_file}"
+      warn "Deleted #{draft_file}"
     end
   end
 end
@@ -123,29 +124,30 @@ names.each do |name|
     Dir.mkdir(drafts_dir) unless Dir.exists?(drafts_dir)
     draft_file = "#{drafts_dir}/#{name}.md"
     if !create_force && File.exists?(draft_file)
-      puts "#{draft_file} already exists"
+      warn "#{draft_file} already exists"
       next
     end
 
     erb = ERB.new(File.read(template_file))
     File.write(draft_file, erb.result(binding))
-    puts "Created #{draft_file}"
+    warn "Created #{draft_file}"
   when :drafts
     draft_files = select_files_for(name, dirpath: drafts_dir)
     draft_files.each do |file|
-      puts file
+      warn file
     end
   when :post
     post_file = "#{posts_dir}/#{post_date.strftime("%Y-%m-%d")}-#{name}.md"
 
     if !create_force && File.exists?(post_file)
-      puts "#{post_file} already exists"
+      warn "#{post_file} already exists"
       next
     end
 
     erb = ERB.new(File.read(template_file))
     File.write(post_file, erb.result(binding))
-    puts "Created #{post_file}"
+    warn "Created #{post_file}"
+    puts post_file
   when :publish, :compile
     case command
     when :compile

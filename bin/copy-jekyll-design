@@ -3,7 +3,7 @@ src_dir=$1
 dst_dir=$2
 
 for file in $(
-    cd $src_dir;
+    cd $src_dir
     (
       find . -name "*.html" | grep -v '^\./genre/' | grep -v '^\./_includes/.*/'
       find _plugins _compass js \
@@ -12,7 +12,7 @@ for file in $(
         _includes/mmenu _includes/mmenu _includes/google-adsense
       find . -name "*.xml"
       find . -name "default_*.yml"
-      echo _data/tag_link_boxes.json
+      echo .gitignore _data/cache.json _data/ads.yml _data/tag_color_groups.yml
     ) | grep -v '^\./_site/'
   ); do
   if [ -d $file ]; then continue; fi
